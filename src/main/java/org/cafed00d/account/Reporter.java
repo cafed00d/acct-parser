@@ -110,11 +110,8 @@ public enum Reporter {
 
   /**
    * Displays an error to the user. The displayed error messages used the
-   * format:
-   * <p>
-   * <blockquote>ERROR: &lt;message&gt;</blockquote>
-   * <p>
-   * Keep this format in mind when construction the error text.
+   * format: <blockquote>ERROR: &lt;message&gt;</blockquote> Keep this format in
+   * mind when construction the error text.
    * <p>
    * Also logs the error at the error level.
    * 
@@ -130,11 +127,9 @@ public enum Reporter {
 
   /**
    * Displays an error caused by an exception to the user. The displayed error
-   * messages used the format:
-   * <p>
-   * <blockquote>ERROR: &lt;message&gt;: &lt;exception&gt;</blockquote>
-   * <p>
-   * Keep this format in mind when construction the error message.
+   * messages used the format: <blockquote>ERROR: &lt;message&gt;:
+   * &lt;exception&gt;</blockquote> Keep this format in mind when construction
+   * the error message.
    * <p>
    * Also logs the error and exception at the error level.
    * 

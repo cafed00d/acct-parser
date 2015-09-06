@@ -73,60 +73,51 @@ public class FileProcessor {
    * </ol>
    */
   public void process() {
-    String fileName = infile.getAbsolutePath();
-    log.info("processing file: " + fileName);
-    String backupFileName = generateFileName(infile, ".bak");
-    log.info("backing up as: " + backupFileName);
-    File backupFile = new File(backupFileName);
-    if (backupFile.exists()) {
-      backupFile.delete();
+    String inFileName = infile.getAbsolutePath();
+    log.info("processing file: " + inFileName);
+    String outFileName = generateFileName(infile);
+    log.info("creating file: " + outFileName);
+    outfile = new File(outFileName);
+    if (outfile.exists()) {
+      outfile.delete();
     }
-    if (!infile.renameTo(new File(backupFileName))) {
-      Reporter.INSTANCE.displayError("Unable to rename file " + fileName + " to " + backupFileName);
-    } else {
-      Reporter.INSTANCE.displayMessage("Correcting " + fileName);
-      outfile = new File(fileName);
-      infile = new File(backupFileName);
-      try {
-        processContents();
-      } catch (Exception e) {
-        Reporter.INSTANCE.displayError("Error while processing file " + fileName + ": " + e.getMessage());
-        log.error(e.getMessage(), e);
-      }
-      reportStatistics();
+    Reporter.INSTANCE.displayMessage("Processing " + inFileName);
+    try {
+      processContents();
+    } catch (Exception e) {
+      Reporter.INSTANCE.displayError("Error while processing file " + inFileName + ": " + e.getMessage());
+      log.error(e.getMessage(), e);
     }
+    Reporter.INSTANCE.displayMessage("Created file " + outFileName);
+    reportStatistics();
   }
 
   /**
-   * Generates an absolute file name with the given extension using the given
-   * file name as the base. Follows these conventions:
-   * <ul>
-   * <li>If the simple file name contains no dots, appends
-   * <code>extension</code></li>
-   * <li>If the simple file name contains a dot only as the first character (ex:
-   * .log), appends <code>extension</code></li>
-   * <li>If the simple file names has a name part and an extension part (the
-   * extension part is the part after the last dot), then it replaces the
-   * existing extension with <code>extension</code></li>
-   * </ul>
-   * <p>
-   * Note the assumption that file names will not end in a dot.
+   * Suffix added to the input file name, just before the extension.
+   */
+  private static final String SUFFIX = "_r";
+
+  /**
+   * Generates an absolute file name using the given file name as the base. The
+   * resulting filename name "_r" inserted before the extension.
    * 
    * @param file
    *          The file for which to generate a name.
-   * @param extension
-   *          The extension to use for the name file name.
-   * @return The generate absolute path name.
+   * @return The generated absolute path name of the new file.
    */
-  private String generateFileName(File file, String extension) {
-    StringBuilder backupName = new StringBuilder(file.getName());
-    int inx = backupName.toString().lastIndexOf('.');
-    if (inx > 0) {
-      backupName.setLength(inx);
+  private String generateFileName(File file) {
+    StringBuilder builder = new StringBuilder(file.getAbsolutePath().length() + 2);
+    builder.append(file.getParentFile().getAbsolutePath()).append(File.separatorChar);
+    String name = file.getName();
+    int inx = name.lastIndexOf(".");
+    if (inx < 0) {
+      // No extension on file name, simply append the suffix
+      builder.append(name).append(SUFFIX);
+    } else {
+      // There is an extension, insert suffix just before it.
+      builder.append(name.substring(0, inx)).append(SUFFIX).append(name.substring(inx));
     }
-    backupName.append(extension);
-    String fullName = file.getParent() + File.separator + backupName.toString();
-    return fullName;
+    return builder.toString();
   }
 
   /**
@@ -140,6 +131,7 @@ public class FileProcessor {
   private void processContents() throws Exception {
     try (PrintStream out = new PrintStream(new FileOutputStream(outfile));
         BufferedReader in = new BufferedReader(new FileReader(infile))) {
+      printHeader(out);
       String inLine = null;
       while ((inLine = in.readLine()) != null) {
         inLineCount++;
@@ -162,6 +154,21 @@ public class FileProcessor {
   }
 
   /**
+   * Separator used for CSV files.
+   */
+  public static final String COMMA = ",";
+
+  /**
+   * Prints the column headers for the output CSV file
+   * 
+   * @param out
+   *          The output file.
+   */
+  private void printHeader(PrintStream out) {
+    out.println("year,month,day,amount,account");
+  }
+
+  /**
    * Examines the CSV line given looking for accounts that are of interest. Does
    * this by using the Account class which maintains information about how to
    * recognize each account of interest. If the account is of interest, converts
@@ -175,6 +182,16 @@ public class FileProcessor {
    */
   private String processLine(String line) {
     StringBuilder result = new StringBuilder();
+    Transaction trans = Transaction.parse(line);
+    if (trans != null) {
+      if (AccountManager.INSTANCE.isRecognizedAccount(trans.getDescription())) {
+        result.append(trans.getYear()).append(COMMA);
+        result.append(trans.getMonth()).append(COMMA);
+        result.append(trans.getDay()).append(COMMA);
+        result.append(trans.getAmount()).append(COMMA);
+        result.append(AccountManager.INSTANCE.convertAccount(trans.getDescription()));
+      }
+    }
     return result.length() == 0 ? null : result.toString();
   }
 

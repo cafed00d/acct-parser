@@ -46,10 +46,9 @@ import org.apache.logging.log4j.Logger;
  * </tr>
  * </table>
  * <p>
- * The utility accepts one <code>*.csv</code> file and processes it. It first
- * backs up the <code>*.csv</code> file as <code>*.bak</code> and then creates a
- * new <code>.scv</code> file containing only entries for accounts of interest
- * using a different format easier to use within R.
+ * The utility accepts one <code>*.csv</code> file and processes it. It creates
+ * a new <code>*_r.scv</code> file containing only entries for accounts of
+ * interest using a different format easier to use within R.
  * <p>
  * <b>Example</b>
  * 
@@ -57,9 +56,8 @@ import org.apache.logging.log4j.Logger;
  * parse c:/users/john/desktop/stmt.scv
  * </pre>
  * <p>
- * Parses the <code>stmt.scv</code> file on John's desktop so that it contains
- * only information of interest, and backs up the original file as
- * <code>stmt.bak</code> on John's desktop.
+ * Parses the <code>stmt.scv</code> file on John's desktop, creating a new file,
+ * <code>stmt_r.csv</code>, on John's desktop.
  */
 public class Parse {
 
@@ -200,10 +198,10 @@ public class Parse {
     file = new File(arg).getAbsoluteFile();
     if (file.exists()) {
       if (file.isFile()) {
-        if (file.canWrite()) {
+        if (file.canRead()) {
           result = true;
         } else {
-          Reporter.INSTANCE.displayError("file is not writeable: " + file.getAbsolutePath());
+          Reporter.INSTANCE.displayError("file is not readable: " + file.getAbsolutePath());
         }
       } else {
         Reporter.INSTANCE.displayError("cannot convert a directory: " + file.getAbsolutePath());
